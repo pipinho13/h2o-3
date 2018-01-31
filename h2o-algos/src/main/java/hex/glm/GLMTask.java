@@ -2,17 +2,17 @@ package hex.glm;
 
 import hex.DataInfo;
 import hex.DataInfo.Row;
-
 import hex.FrameTask2;
 import hex.glm.GLMModel.GLMParameters;
-import hex.glm.GLMModel.GLMParameters.Link;
-import hex.glm.GLMModel.GLMWeightsFun;
-import hex.glm.GLMModel.GLMWeights;
-import hex.gram.Gram;
 import hex.glm.GLMModel.GLMParameters.Family;
-import water.H2O.H2OCountedCompleter;
+import hex.glm.GLMModel.GLMParameters.Link;
+import hex.glm.GLMModel.GLMWeights;
+import hex.glm.GLMModel.GLMWeightsFun;
+import hex.gram.Gram;
 import water.*;
-import water.fvec.*;
+import water.H2O.H2OCountedCompleter;
+import water.fvec.C0DChunk;
+import water.fvec.Chunk;
 import water.util.ArrayUtils;
 import water.util.FrameUtils;
 import water.util.MathUtils;
@@ -806,7 +806,7 @@ public abstract class GLMTask  {
       _reg = reg;
       // need to flip the beta
       _beta = new double[beta[0].length][beta.length];
-      _theLast = beta[0].length-1;
+      _theLast = beta.length-1;
       _secondToLast = _theLast-1;
       _thirdToLast = _secondToLast-1;
       for(int i = 0; i < _beta.length; ++i)
@@ -922,9 +922,11 @@ public abstract class GLMTask  {
         if (y==0) { // response is in 0th category
           etasOffset[row][0] = 1-_glmp.linkInv(tempEtas[0]);
           etas[row][0] = etasOffset[row][0];
+          _likelihood -= w*tempEtas[y]-Math.log(1+Math.exp(tempEtas[y]));
         } else if (y==_theLast) { // response is in last category
           etasOffset[row][_secondToLast] = -1.0*_glmp.linkInv(tempEtas[_secondToLast]);
           etas[row][0] = etasOffset[row][_secondToLast];
+          _likelihood += w*Math.log(1+Math.exp(tempEtas[_secondToLast]));
         } else {  // perform update for response between 1 to K-2
           yJ = _glmp.linkInv(tempEtas[y]);
           yJm1 = _glmp.linkInv(tempEtas[y-1]);
@@ -933,7 +935,8 @@ public abstract class GLMTask  {
           int lastC = y-1;
           etasOffset[row][y] = num/den;
           etas[row][0] = (num-(yJm1-yJm1*yJm1))/den;
-          etasOffset[row][lastC] += (yJm1*yJm1-yJm1)/den;
+          etasOffset[row][lastC] = (yJm1*yJm1-yJm1)/den;
+          _likelihood -= w*Math.log(den);
         }
 
         for (int c=1; c<K; c++)  // set beta of all classes to be the same
@@ -994,13 +997,19 @@ public abstract class GLMTask  {
         computeGradientMultipliersOlogit(etas, etasOffset, response.getDoubles(vals, 0, M), ws);
       else
         computeGradientMultipliers(etas, response.getDoubles(vals, 0, M), ws);
+
       computeCategoricalGrads(chks, etas, vals, ids);
       computeNumericGrads(chks, etas, vals, ids);
 
       double [] g = _gradient[P-1]; // get the intercept gradient.
       // sum up the gradient over the data rows in this chk[]
-      for(int i = 0; i < etas.length; ++i)
-        ArrayUtils.add(g,etas[i]);
+      if (_link == Link.ologit) {
+        for (int i = 0; i < etasOffset.length; ++i)
+          ArrayUtils.add(g, etasOffset[i]);
+      } else {
+        for (int i = 0; i < etas.length; ++i)
+          ArrayUtils.add(g, etas[i]);
+      }
       if(_dinfo._normSub != null) {
         double [] icpt = _gradient[P-1];
         for(int i = 0; i < _dinfo._normSub.length; ++i) {

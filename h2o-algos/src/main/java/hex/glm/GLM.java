@@ -1748,8 +1748,12 @@ public class GLM extends ModelBuilder<GLMModel,GLMParameters,GLMOutput> {
         GLMMultinomialGradientTask gt = new GLMMultinomialGradientTask(_job, _dinfo, _l2pen, _betaMultinomial,
                 _parms._obj_reg, _parms._link, _parms).doAll(_dinfo._adaptedFrame);
         double l2pen = 0;
-        for (double[] b : _betaMultinomial)
+        for (double[] b : _betaMultinomial) {
           l2pen += ArrayUtils.l2norm2(b, _dinfo._intercept);
+
+          if (_parms._family == Family.ordinal)
+            break;  // only one beta for all classes
+        }
 
         double[] grad = gt.gradient();
         if (!_parms._intercept) {
