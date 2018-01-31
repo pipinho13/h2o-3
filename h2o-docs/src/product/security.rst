@@ -507,7 +507,7 @@ Example **ldap.conf**:
     };
 
 See the `Jetty 9 LdapLoginModule
-documentation <http://wiki.eclipse.org/Jetty/Feature/JAAS#LdapLoginModule>`__
+documentation <http://www.eclipse.org/jetty/documentation/current/jaas-support.html>`__
 for more information.
 
 Standalone H2O
