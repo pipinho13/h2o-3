@@ -1,0 +1,10 @@
+FROM docker.h2o.ai/opsh2oai/h2o-3-xgb-runtime-minimal:centos-6.5
+
+MAINTAINER h2oai "h2o.ai"
+
+ARG JENKINS_UID='2117'
+ARG JENKINS_GID='2117'
+
+RUN \
+    rpm --rebuilddb && \
+    yum install -y libgomp

@@ -1,0 +1,11 @@
+#! /bin/bash
+
+set -e
+
+pip3.5 install virtualenv
+virtualenv -p python3.5 /envs/h2o_env_python3.5
+chmod a+w -R /envs/h2o_env_python3.5
+source /envs/h2o_env_python3.5/bin/activate
+wget https://raw.githubusercontent.com/h2oai/h2o-3/${H2O_BRANCH}/h2o-py/requirements.txt
+pip install -r requirements.txt
+rm requirements.txt

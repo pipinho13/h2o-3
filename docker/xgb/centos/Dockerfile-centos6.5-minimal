@@ -1,0 +1,53 @@
+FROM gpmidi/centos-6.5
+
+MAINTAINER h2oai "h2o.ai"
+
+ARG H2O_BRANCH='master'
+ARG JENKINS_UID='2117'
+ARG JENKINS_GID='2117'
+
+COPY xgb/centos/common/sbin /usr/sbin
+
+RUN \
+    chmod +x /usr/sbin/install_packages && \
+    sync && \
+    /usr/sbin/install_packages
+
+RUN \
+    chmod +x /usr/sbin/install_java && \
+    sync && \
+    /usr/sbin/install_java
+ENV JAVA_HOME=/usr/java/default/
+
+RUN \
+    chmod +x /usr/sbin/install_python && \
+    sync && \
+    /usr/sbin/install_python
+
+RUN \
+    chmod +x /usr/sbin/create_jenkins_user && \
+    sync && \
+    /usr/sbin/create_jenkins_user
+
+# Set GRADLE USER env var
+ENV GRADLE_USER_HOME '/gradle-user-home'
+ENV GRADLE_OPTS '-Dorg.gradle.daemon=false'
+ENV LANG 'C.UTF-8'
+ENV JAVA_VERSION '8'
+
+COPY scripts/build-h2o-3 /tmp
+RUN \
+  mkdir -p /opt/h2o-3 /gradle-user-home && \
+  chmod +x /tmp/build-h2o-3 && \
+  chown jenkins:jenkins /tmp/build-h2o-3 /opt/h2o-3 /gradle-user-home
+# build h2o-3 as custom user
+USER jenkins
+RUN \
+    /tmp/build-h2o-3
+USER root
+# remove the tmp and h2o-3 files
+# remove the /gradle-user-home/daemon as well since it won't break caches and the folder is messed up
+RUN \
+    rm -rf /tmp/build-h2o-3 /gradle-user-home/daemon
+
+ENTRYPOINT /bin/bash

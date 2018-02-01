@@ -1,0 +1,27 @@
+#! /bin/bash
+
+set -e
+
+yum install -y wget
+rpm --rebuilddb
+yum install -y shadow-utils.x86_64
+rpm --rebuilddb
+yum -y install https://centos6.iuscommunity.org/ius-release.rpm
+rpm --rebuilddb
+yum -y install python35u-devel
+rpm --rebuilddb
+yum -y install python35u-pip
+rpm --rebuilddb
+yum -y install git
+rpm --rebuilddb
+yum -y install mysql-devel
+rpm --rebuilddb
+yum -y install gcc
+rpm --rebuilddb
+yum -y install gcc-c++
+rpm --rebuilddb
+yum -y install epel-release
+rpm --rebuilddb
+yum -y install nodejs
+rpm --rebuilddb
+yum -y install npm
